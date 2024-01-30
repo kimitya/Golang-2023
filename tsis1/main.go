@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-
+	"strconv"
 	"github.com/gorilla/mux"
 )
 
@@ -24,7 +24,7 @@ func HealthCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
   
   //update response writer 
-	fmt.Fprintf(w, "API is up and running")
+	fmt.Fprintf(w, "Hi! My name is Anita c: My favorite movie is Ratatoulie, so it's my API of characters ofthe movie <з")
 }
 
 func prepareResponse() []Character {
@@ -44,7 +44,7 @@ func prepareResponse() []Character {
 	return characters
 }
 
-func Persons(w http.ResponseWriter, r *http.Request) {
+func Characters(w http.ResponseWriter, r *http.Request) {
 	//declare response variable
 	var response Response
   
@@ -70,15 +70,57 @@ func Persons(w http.ResponseWriter, r *http.Request) {
 	w.Write(jsonResponse)
 }
 
+func CharacterByID(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	characterIDStr, ok := vars["id"]
+	if !ok {
+		http.Error(w, "Missing character ID", http.StatusBadRequest)
+		return
+	}
+
+	characterID, err := strconv.Atoi(characterIDStr)
+	if err != nil {
+		http.Error(w, "Invalid character ID", http.StatusBadRequest)
+		return
+	}
+
+	allCharacters := prepareResponse()
+
+	var foundCharacter Character
+	for _, character := range allCharacters {
+		if character.ID == characterID {
+			foundCharacter = character
+			break
+		}
+	}
+
+	if foundCharacter.ID == 0 {
+		http.Error(w, "Character not found", http.StatusNotFound)
+		return
+	}
+
+	jsonResponse, err := json.Marshal(foundCharacter)
+	if err != nil {
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+
+	w.WriteHeader(http.StatusOK)
+
+	w.Write(jsonResponse)
+}
+
+
+
 func main() {
-	// Create a new router
 	router := mux.NewRouter()
 
-	// Specify endpoints, handler functions, and HTTP methods
 	router.HandleFunc("/health-check", HealthCheck).Methods("GET")
-	router.HandleFunc("/characters", Persons).Methods("GET")
+	router.HandleFunc("/characters", Characters).Methods("GET")
+	router.HandleFunc("/characters/{id:[0-9]+}", CharacterByID).Methods("GET")
 
-	// Start and listen to requests
 	http.Handle("/", router)
 	http.ListenAndServe(":8080", router)
 }
