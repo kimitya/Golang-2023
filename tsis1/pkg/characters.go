@@ -1,16 +1,11 @@
-package main
+package pkg
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"strconv"
 	"github.com/gorilla/mux"
 )
-
-type Response struct {
-	Characters []Character `json:"persons"`
-}
 
 type Character struct {
 	ID        int    `json:"id"`
@@ -19,12 +14,8 @@ type Character struct {
 	IsRat     bool   `json:"is_rat"`
 }
 
-func HealthCheck(w http.ResponseWriter, r *http.Request) {
-	//specify status code
-	w.WriteHeader(http.StatusOK)
-  
-  //update response writer 
-	fmt.Fprintf(w, "Hi! My name is Anita c: My favorite movie is Ratatoulie, so it's my API of characters ofthe movie <з")
+type Response struct {
+	Characters []Character `json:"persons"`
 }
 
 func prepareResponse() []Character {
@@ -45,22 +36,11 @@ func prepareResponse() []Character {
 }
 
 func Characters(w http.ResponseWriter, r *http.Request) {
-	//declare response variable
 	var response Response
-  
-	//Retrieve person details
 	characters := prepareResponse()
-  
-	//assign person details to response
 	response.Characters = characters
-  
-	//update content type
 	w.Header().Set("Content-Type", "application/json")
-  
-	//specify HTTP status code
 	w.WriteHeader(http.StatusOK)
-  
-	//convert struct to JSON
 	jsonResponse, err := json.Marshal(response)
 	if err != nil {
 	 return
@@ -73,6 +53,7 @@ func Characters(w http.ResponseWriter, r *http.Request) {
 func CharacterByID(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	characterIDStr, ok := vars["id"]
+	// ok boolean variable that indicates whether the key "id" exists in the vars map
 	if !ok {
 		http.Error(w, "Missing character ID", http.StatusBadRequest)
 		return
@@ -110,17 +91,4 @@ func CharacterByID(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	w.Write(jsonResponse)
-}
-
-
-
-func main() {
-	router := mux.NewRouter()
-
-	router.HandleFunc("/health-check", HealthCheck).Methods("GET")
-	router.HandleFunc("/characters", Characters).Methods("GET")
-	router.HandleFunc("/characters/{id:[0-9]+}", CharacterByID).Methods("GET")
-
-	http.Handle("/", router)
-	http.ListenAndServe(":8080", router)
 }
