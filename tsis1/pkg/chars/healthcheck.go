@@ -1,4 +1,4 @@
-package pkg
+package characters
 
 import (
 	"fmt"
